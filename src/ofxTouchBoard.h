@@ -26,14 +26,20 @@ class ofxTouchBoard {
 		void setup(int deviceId);
 
 		void update();
-
 		void logData();
 
+		bool isConnected();
+	
 		void printData(float x, float y);
 		void printRawData(float x, float y);
 		
 		void draw(float x, float y);
 
+	
+		void setTouchThreshold(int elect,float threshold);
+		void setReleaseThreshold(int elect,float threshold);
+	
+	
 		void useBoardThresholds(bool b);
 
 		const vector<ofxTB::Electrode>& getData();
@@ -56,4 +62,6 @@ class ofxTouchBoard {
 		void printDataLine(float val, float x, float y);
 		void printDataLine(int val, float x, float y);
 		void exit(ofEventArgs& e);
+	
+		bool bIsConnected;
 };

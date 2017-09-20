@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 
-namespace ofxTB {
+namespace ofxTB
+{
     float trunc(float n, int p);
 };

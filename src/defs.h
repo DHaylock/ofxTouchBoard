@@ -1,8 +1,11 @@
 #pragma once
 
+#define TOUCH_BOARD_VID 10862
+#define TOUCH_BOARD_PID 32771
+
 namespace ofxTB {
 	// TODO: check what is the 13th electrode
-	const int ELECTRODES_NB = 13;
+	const int ELECTRODES_NB = 12;
 
 	const int DATA_NB_LINE = 6;
 

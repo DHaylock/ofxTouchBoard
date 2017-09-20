@@ -1,18 +1,31 @@
 #include "ofxTouchBoard.h"
-
-void ofxTouchBoard::setup(int deviceId){
-	serial.setup(deviceId);
-	init();
+//--------------------------------------------------------------
+void ofxTouchBoard::setup(int deviceId)
+{
+//	init();
 }
-
-void ofxTouchBoard::setup(){
+//--------------------------------------------------------------
+void ofxTouchBoard::setup()
+{
+	bIsConnected = false;
 	serial.setup();
 	init();
 }
+//--------------------------------------------------------------
+bool ofxTouchBoard::isConnected()
+{
+	return serial.foundDevice();
+}
 
-void ofxTouchBoard::init(){
+//--------------------------------------------------------------
+void ofxTouchBoard::init()
+{
 	ofAddListener(ofEvents().exit, this, &ofxTouchBoard::exit);
-	serial.startThread(false);
+	
+	
+	if(serial.foundDevice()) serial.startThread(false);
+	
+	
 	electrodes.resize(ofxTB::ELECTRODES_NB);
 
 	graphHeight = 200;
@@ -20,14 +33,15 @@ void ofxTouchBoard::init(){
 	graphBarWidth = 20; 
 	jitter = 0.0;
 
-	bBoardThresholds = true;
+	bBoardThresholds = false;
 
 	setupThresholds();
 
 	touchStatus = vector<bool>(ofxTB::ELECTRODES_NB, false);
 }
-
-void ofxTouchBoard::setupThresholds(){
+//--------------------------------------------------------------
+void ofxTouchBoard::setupThresholds()
+{
 	touchThresholds.resize(ofxTB::ELECTRODES_NB);
 	releaseThresholds.resize(ofxTB::ELECTRODES_NB);
 
@@ -35,7 +49,7 @@ void ofxTouchBoard::setupThresholds(){
 		ofParameter<float> t;
 		t.set("TTHS" + ofToString(i), 0.15625, 0.0, 1.0);
 		ofParameter<float> r;
-		r.set("RTHS" + ofToString(i), 0.078125, 0.0, 1.0);
+		r.set("RTHS" + ofToString(i),0.078125, 0.0, 1.0);
 		touchThresholds[i] = t;
 		releaseThresholds[i] = r;
 	
@@ -44,7 +58,9 @@ void ofxTouchBoard::setupThresholds(){
 	}
 }
 
-void ofxTouchBoard::update(){
+//--------------------------------------------------------------
+void ofxTouchBoard::update()
+{
 	serial.lock();
 		vector<ofxTB::Electrode> rawData(serial.getNormalizedData());
 	serial.unlock();
@@ -64,8 +80,29 @@ void ofxTouchBoard::update(){
 	}
 	updateStatus();
 }
+//--------------------------------------------------------------
+void ofxTouchBoard::setTouchThreshold(int elect, float threshold)
+{
+	if(elect < 0 || elect > ofxTB::ELECTRODES_NB)
+		return;
 
-void ofxTouchBoard::updateStatus(){
+	electrodes[elect].tths = threshold;
+	touchThresholds[elect].set(threshold);
+}
+
+//--------------------------------------------------------------
+void ofxTouchBoard::setReleaseThreshold(int elect, float threshold)
+{
+	if(elect < 0 || elect > ofxTB::ELECTRODES_NB)
+		return;
+	
+	electrodes[elect].rths = threshold;
+	releaseThresholds[elect].set(threshold);
+}
+
+//--------------------------------------------------------------
+void ofxTouchBoard::updateStatus()
+{
 	for(int i = 0; i < touchStatus.size(); ++i){
 		bool touchEvent;
 		bool releaseEvent; 
@@ -92,12 +129,15 @@ void ofxTouchBoard::updateStatus(){
 	}
 
 }
-
-void ofxTouchBoard::logData(){
+//--------------------------------------------------------------
+void ofxTouchBoard::logData()
+{
 	serial.logData();
 }
 
-void ofxTouchBoard::draw(float x, float y){
+//--------------------------------------------------------------
+void ofxTouchBoard::draw(float x, float y)
+{
 	for(int i = 0; i < electrodes.size(); ++i){
 		ofxTB::Electrode e(electrodes[i]);
 
@@ -117,11 +157,15 @@ void ofxTouchBoard::drawGraphBar(float x0, float y0, int i, float val, float wid
 	ofDrawPlane(x, y, width, val * graphHeight);
 }
 
-void ofxTouchBoard::printData(float x, float y){
+//--------------------------------------------------------------
+void ofxTouchBoard::printData(float x, float y)
+{
 	printData(electrodes, x, y);
 }
 
-void ofxTouchBoard::printRawData(float x, float y){
+//--------------------------------------------------------------
+void ofxTouchBoard::printRawData(float x, float y)
+{
 	serial.lock();
 		vector<ofxTB::Electrode> raw(serial.getData());
 	serial.unlock();
@@ -129,13 +173,17 @@ void ofxTouchBoard::printRawData(float x, float y){
 	printData(raw, x, y);
 }
 
-void ofxTouchBoard::printData(vector<ofxTB::Electrode>& e, float x, float y){
+//--------------------------------------------------------------
+void ofxTouchBoard::printData(vector<ofxTB::Electrode>& e, float x, float y)
+{
+	
 	float charWidth = 11;
 	float charHeight = 15;
 	float xOffset = x;
 	float yOffset = y + charHeight;
 	float colWidth = 30;
 	float rowHeight = 20;
+	ofSetColor(0, 0, 0);
 	ofDrawBitmapString("E", x, yOffset);
 	xOffset += 2 * charWidth;
 	ofDrawBitmapString("TOUCH", xOffset, yOffset);
@@ -170,49 +218,68 @@ void ofxTouchBoard::printData(vector<ofxTB::Electrode>& e, float x, float y){
 	}
 }
 
-void ofxTouchBoard::printDataLine(float val, float x, float y){
+//--------------------------------------------------------------
+void ofxTouchBoard::printDataLine(float val, float x, float y)
+{
 	ofDrawBitmapString(ofToString(ofxTB::trunc(val, 2)), x, y);
 }
-
-void ofxTouchBoard::printDataLine(int val, float x, float y){
+//--------------------------------------------------------------
+void ofxTouchBoard::printDataLine(int val, float x, float y)
+{
 	ofDrawBitmapString(ofToString(val), x, y);
 }
-
-void ofxTouchBoard::exit(ofEventArgs& e){
+//--------------------------------------------------------------
+void ofxTouchBoard::exit(ofEventArgs& e)
+{
 	serial.waitForThread();
 }
 
-void ofxTouchBoard::useBoardThresholds(bool b){
+//--------------------------------------------------------------
+void ofxTouchBoard::useBoardThresholds(bool b)
+{
     bBoardThresholds = b;
 }
 
-const vector<ofxTB::Electrode>& ofxTouchBoard::getData(){
+//--------------------------------------------------------------
+const vector<ofxTB::Electrode>& ofxTouchBoard::getData()
+{
     return electrodes;
 }
 
-const vector<ofxTB::Electrode>& ofxTouchBoard::getRawData(){
+//--------------------------------------------------------------
+const vector<ofxTB::Electrode>& ofxTouchBoard::getRawData()
+{
     return serial.getData();
 }
 
-const vector<ofParameter<float> >& ofxTouchBoard::getTouchThresholds(){
+//--------------------------------------------------------------
+const vector<ofParameter<float> >& ofxTouchBoard::getTouchThresholds()
+{
     return touchThresholds;
 }
 
-const vector<ofParameter<float> >& ofxTouchBoard::getReleaseThresholds(){
+//--------------------------------------------------------------
+const vector<ofParameter<float> >& ofxTouchBoard::getReleaseThresholds()
+{
     return releaseThresholds;
 }
 
-const ofParameterGroup& ofxTouchBoard::getTouchThresholdsParams(){
+//--------------------------------------------------------------
+const ofParameterGroup& ofxTouchBoard::getTouchThresholdsParams()
+{
     return touchThresholdsParams;
 }
 
-const ofParameterGroup& ofxTouchBoard::getReleaseThresholdsParams(){
+//--------------------------------------------------------------
+const ofParameterGroup& ofxTouchBoard::getReleaseThresholdsParams()
+{
     return releaseThresholdsParams;
 }
 
-const vector<bool>& ofxTouchBoard::getTouchStatus(){
+//--------------------------------------------------------------
+const vector<bool>& ofxTouchBoard::getTouchStatus()
+{
     return touchStatus;
 }
-
 
 

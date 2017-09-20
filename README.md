@@ -7,6 +7,9 @@ Introduction
 ------------
 This addon helps you receive data from the [Bare Conductive](http://www.bareconductive.com/)'s Touch Board in a simple and convenient way.
 
+This is a fork of the original repo. 
+I've altered it to autoconnect to the touch board by looking at the PId and VId values of the connected usb devices. **August 2017**
+
 License
 -------
 [MIT License](https://en.wikipedia.org/wiki/MIT_License), see license.md.

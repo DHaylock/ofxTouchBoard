@@ -4,8 +4,8 @@
 
 #include "defs.h"
 
-class Serial : public ofThread {
-
+class Serial : public ofThread
+{
 	ofSerial serial;
 
 	vector<ofxTB::Electrode> data;
@@ -16,17 +16,47 @@ class Serial : public ofThread {
 	bool bConnected;
 
 	public:
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
 		void setup();
-		void setup(int deviceId);
+	
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
 		void threadedFunction();
+	
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
         int available();
+	
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
 		void logData();
 
+	
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
+		bool foundDevice();
+	
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
 		vector<ofxTB::Electrode> getData();
+	
+		//-----------------------------------------------------
+		/// \brief
+		//-----------------------------------------------------
 		vector<ofxTB::Electrode> getNormalizedData();
 		
 	private:
 		void connect();
 		void init();
 		void readLine();
+	
+		string touchBoardDeviceName;
+		bool bFoundDevice;
 };

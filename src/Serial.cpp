@@ -1,53 +1,94 @@
 #include "Serial.h"
 
-void Serial::setup(){
-	deviceNb = -1;
+#ifdef TARGET_OSX
+	#include "InterfacesOSX.h"
+#endif
 
-	serial.listDevices();
-	cout << "Please choose a device: ";
-	cin >> deviceNb;
+#ifdef TARGET_WIN32  
+
+#endif
+
+
+
+//-----------------------------------------------------
+void Serial::setup()
+{
+	bFoundDevice = false;
+	
+	#ifdef TARGET_OSX
+		Cougar::InterfacesOSX *interfaces;
+		interfaces = new Cougar::InterfacesOSX();
+		touchBoardDeviceName = "";
+		
+		for (int i = 0; i < interfaces->GetDevices().size(); i++)
+		{
+			if(interfaces->GetDevices()[i].parent.productId == TOUCH_BOARD_PID && interfaces->GetDevices()[i].parent.vendorId == TOUCH_BOARD_VID && interfaces->GetDevices()[i].parent.type != Cougar::DeviceType::BLUETOOTH_DEVICE)
+			{
+				touchBoardDeviceName = "/dev/tty."+ interfaces->GetDevices()[i].name;
+				bFoundDevice = true;
+				break;
+			}
+		}
+	#endif
+	
 	init();
 }
 
-void Serial::setup(int deviceId){
-	deviceNb = deviceId;
-	init();
-}
-
-void Serial::init(){
+//-----------------------------------------------------
+void Serial::init()
+{
 	data.resize(ofxTB::ELECTRODES_NB);
 	normalizedData.resize(ofxTB::ELECTRODES_NB);
-	
 	baudRate = 57600;
 	bConnected = false;
 	connect();
 }
 
-void Serial::connect(){
-	serial.setup(deviceNb, baudRate);
-	if(!serial.isInitialized()){
-		ofLog() << "Connection to device " << deviceNb << " failed. Retrying in 1s.";
-		ofSleepMillis(1000);
-		connect();
+//-----------------------------------------------------
+void Serial::connect()
+{
+	if(touchBoardDeviceName.size() == 0) cout << "Blah" << endl;
+	else
+	{
+		serial.setup(touchBoardDeviceName, baudRate);
+		if(!serial.isInitialized()){
+			ofLog() << "Connection to device " << touchBoardDeviceName << " failed.";
+			ofSleepMillis(1000);
+	//		connect();
+		}
 	}
 }
 
-void Serial::threadedFunction(){
-	while(isThreadRunning()){
+//-----------------------------------------------------
+bool Serial::foundDevice()
+{
+	return bFoundDevice;
+}
+
+//-----------------------------------------------------
+void Serial::threadedFunction()
+{
+	while(isThreadRunning())
+	{
 		readLine();
 	}
 }
 
-int Serial::available(){
+//-----------------------------------------------------
+int Serial::available()
+{
     return serial.available();
 }
 
-
-vector<ofxTB::Electrode> Serial::getData(){
+//-----------------------------------------------------
+vector<ofxTB::Electrode> Serial::getData()
+{
 	return data;
 }
 
-vector<ofxTB::Electrode> Serial::getNormalizedData(){
+//-----------------------------------------------------
+vector<ofxTB::Electrode> Serial::getNormalizedData()
+{
 	copy(data.begin(), data.end(), normalizedData.begin());
 	float tenBits = 1024.0;
 	float eightBits = 256.0;
@@ -61,7 +102,9 @@ vector<ofxTB::Electrode> Serial::getNormalizedData(){
 	return normalizedData;
 }
 
-void Serial::readLine(){
+//-----------------------------------------------------
+void Serial::readLine()
+{
 	stringstream ss;
 	char dataByte = serial.readByte();
 	while(dataByte != '\r'){
@@ -112,24 +155,27 @@ void Serial::readLine(){
 	}
 }
 
-void Serial::logData(){
-	cout << left << setw(4) << "EX" 
-			<< left << setw(6) << "TOUCH" 
-			<< left << setw(5) << "TTHS" 
-			<< left << setw(5) << "RTHS"
-			<< left << setw(5) << "FDAT"
-			<< left << setw(5) << "BVAL"
-			<< left << setw(5) << "DIFF" << endl;
+//-----------------------------------------------------
+void Serial::logData()
+{
+	cout << left << setw(4) << "EX"
+	<< left << setw(6) << "TOUCH"
+	<< left << setw(5) << "TTHS" 
+	<< left << setw(5) << "RTHS"
+	<< left << setw(5) << "FDAT"
+	<< left << setw(5) << "BVAL"
+	<< left << setw(5) << "DIFF" << endl;
 
-	for(int i = 0; i < data.size(); ++i){
+	for(int i = 0; i < data.size(); ++i)
+	{
 		ofxTB::Electrode e(data[i]);
 		cout << left << setw(1) << "E"
-				<< left << setw(3) << i
-				<< left << setw(6) << e.touch
-				<< left << setw(5) << e.tths
-				<< left << setw(5) << e.rths
-				<< left << setw(5) << e.fdat
-				<< left << setw(5) << e.bval
-				<< left << setw(5) << e.diff << endl;
+		<< left << setw(3) << i
+		<< left << setw(6) << e.touch
+		<< left << setw(5) << e.tths
+		<< left << setw(5) << e.rths
+		<< left << setw(5) << e.fdat
+		<< left << setw(5) << e.bval
+		<< left << setw(5) << e.diff << endl;
 	}
 }
